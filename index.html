@@ -2,42 +2,56 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+<!-- 🔒 BLOCCO ZOOM SERIO -->
+<meta name="viewport"
+      content="width=device-width,
+               height=device-height,
+               initial-scale=1,
+               maximum-scale=1,
+               user-scalable=no">
+
 <title>Macchina Pazza 2.0</title>
 
 <style>
-  body {
+  html, body {
     margin: 0;
-    background: #666;
+    padding: 0;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
+    background: #666;
     touch-action: none;
     font-family: Arial, sans-serif;
   }
 
   canvas {
     display: block;
-    margin: auto;
     background: #aaa;
   }
 
   .controls {
     position: fixed;
-    bottom: 20px;
+    bottom: 0;
     width: 100%;
+    height: 120px;
     display: flex;
     justify-content: space-around;
+    align-items: center;
+    background: #666;
   }
 
   .controls button {
-    width: 100px;
-    height: 100px;
-    font-size: 40px;
-    border-radius: 20px;
+    width: 110px;
+    height: 110px;
+    font-size: 42px;
+    border-radius: 25px;
     border: none;
     background: #ccc;
   }
 </style>
 </head>
+
 <body>
 
 <canvas id="game"></canvas>
@@ -51,10 +65,10 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-// resize per tablet / telefono
+// 🔧 DIMENSIONI CORRETTE (canvas sopra ai controlli)
 function resize() {
-  canvas.width = Math.min(window.innerWidth, 500);
-  canvas.height = window.innerHeight - 160;
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight - 120;
 }
 window.addEventListener("resize", resize);
 resize();
@@ -63,11 +77,11 @@ resize();
 const lanes = 3;
 let laneWidth = canvas.width / lanes;
 
-// MACCHINA (QUADRATA ROSSA)
+// 🚗 MACCHINA (SEMPRE VISIBILE)
 let player = {
-  lane: 1,        // corsia centrale
-  size: 40,       // 🔴 grande 40
-  y: canvas.height - 80
+  lane: 1,
+  size: 40,
+  y: canvas.height - 60
 };
 
 let obstacles = [];
@@ -83,7 +97,7 @@ function moveRight() {
   if (player.lane < lanes - 1) player.lane++;
 }
 
-// OSTACOLI NERI
+// OSTACOLI
 function addObstacle() {
   obstacles.push({
     lane: Math.floor(Math.random() * lanes),
@@ -92,13 +106,14 @@ function addObstacle() {
   });
 }
 
-// LOOP PRINCIPALE
+// LOOP
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   laneWidth = canvas.width / lanes;
+  player.y = canvas.height - 60; // 🔒 BLOCCATA IN BASSO
 
-  // sfondo strada
+  // strada
   ctx.fillStyle = "#aaa";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -112,18 +127,18 @@ function update() {
     ctx.stroke();
   }
 
-  // 🔢 PUNTEGGIO VISIBILE
+  // 🔢 PUNTEGGIO
   const score = Math.floor((Date.now() - startTime) / 1000);
   ctx.fillStyle = "black";
   ctx.font = "22px Arial";
   ctx.fillText("Punteggio: " + score, 10, 30);
 
-  // macchina
-  const playerX = player.lane * laneWidth + laneWidth / 2 - player.size / 2;
+  // 🚗 MACCHINA ROSSA
+  const px = player.lane * laneWidth + laneWidth / 2 - player.size / 2;
   ctx.fillStyle = "red";
-  ctx.fillRect(playerX, player.y, player.size, player.size);
+  ctx.fillRect(px, player.y, player.size, player.size);
 
-  // ostacoli
+  // ⬛ OSTACOLI
   ctx.fillStyle = "black";
   for (let o of obstacles) {
     o.y += speed;
@@ -132,7 +147,7 @@ function update() {
 
     // collisione
     if (
-      player.lane === o.lane &&
+      o.lane === player.lane &&
       o.y + o.size > player.y &&
       o.y < player.y + player.size
     ) {
@@ -142,14 +157,10 @@ function update() {
   }
 
   obstacles = obstacles.filter(o => o.y < canvas.height);
-
   requestAnimationFrame(update);
 }
 
-// GENERAZIONE OSTACOLI
 setInterval(addObstacle, 900);
-
-// AVVIO
 update();
 </script>
 
