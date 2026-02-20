@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no">
+<title>Macchia Rossa</title>
+
+<style>
+  body {
+    margin: 0;
+    background: #ddd;
+    overflow: hidden;
+    touch-action: none;
+    font-family: Arial, sans-serif;
+  }
+
+  .score {
+    position: fixed;
+    top: 10px;
+    width: 100%;
+    text-align: center;
+    font-size: 24px;
+    color: black;
+    z-index: 10;
+  }
+
+  canvas {
+    display: block;
+    margin: auto;
+    background: white;
+  }
+
+  .controls {
+    position: fixed;
+    bottom: 20px;
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    z-index: 10;
+  }
+
+  .controls button {
+    width: 100px;
+    height: 100px;
+    font-size: 40px;
+    border-radius: 20px;
+    border: none;
+    background: #aaa;
+  }
+</style>
+</head>
+<body>
+
+<div class="score">Punteggio: <span id="score">0</span></div>
+<canvas id="game"></canvas>
+
+<div class="controls">
+  <button ontouchstart="move(-1)">⬅️</button>
+  <button ontouchstart="move(1)">➡️</button>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const scoreEl = document.getElementById("score");
+
+// dimensioni responsive
+function resize() {
+  canvas.width = Math.min(window.innerWidth, 500);
+  canvas.height = window.innerHeight - 200;
+}
+window.addEventListener("resize", resize);
+resize();
+
+let player = { x: canvas.width / 2, y: 0, r: 14 };
+let obstacles = [];
+let speed = 3;
+let startTime = Date.now();
+
+function move(dir) {
+  player.x += dir * 25;
+  player.x = Math.max(player.r, Math.min(canvas.width - player.r, player.x));
+}
+
+function addObstacle() {
+  obstacles.push({
+    x: Math.random() * (canvas.width - 40),
+    y: -20,
+    w: 40,
+    h: 20
+  });
+}
+
+function update() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // giocatore (sempre in basso, va "avanti" da solo)
+  player.y = canvas.height - 40;
+
+  ctx.fillStyle = "red";
+  ctx.beginPath();
+  ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
+  ctx.fill();
+
+  // ostacoli
+  ctx.fillStyle = "black";
+  for (let o of obstacles) {
+    o.y += speed;
+    ctx.fillRect(o.x, o.y, o.w, o.h);
+
+    if (
+      player.x + player.r > o.x &&
+      player.x - player.r < o.x + o.w &&
+      player.y + player.r > o.y &&
+      player.y - player.r < o.y + o.h
+    ) {
+      alert("Game Over!\nPunteggio: " + scoreEl.textContent);
+      location.reload();
+    }
+  }
+
+  obstacles = obstacles.filter(o => o.y < canvas.height);
+
+  // punteggio = secondi vivi
+  scoreEl.textContent = Math.floor((Date.now() - startTime) / 1000);
+
+  requestAnimationFrame(update);
+}
+
+setInterval(addObstacle, 900);
+update();
+</script>
+
+</body>
+</html>
