@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 
-<!-- 🔒 BLOCCO ZOOM SERIO -->
 <meta name="viewport"
       content="width=device-width,
                height=device-height,
@@ -48,6 +47,7 @@
     border-radius: 25px;
     border: none;
     background: #ccc;
+    touch-action: none;
   }
 </style>
 </head>
@@ -57,15 +57,15 @@
 <canvas id="game"></canvas>
 
 <div class="controls">
-  <button ontouchstart="moveLeft()">⬅️</button>
-  <button ontouchstart="moveRight()">➡️</button>
+  <button id="leftBtn">⬅️</button>
+  <button id="rightBtn">➡️</button>
 </div>
 
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-// 🔧 DIMENSIONI CORRETTE (canvas sopra ai controlli)
+// dimensioni canvas (sopra i controlli)
 function resize() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight - 120;
@@ -77,7 +77,7 @@ resize();
 const lanes = 3;
 let laneWidth = canvas.width / lanes;
 
-// 🚗 MACCHINA (SEMPRE VISIBILE)
+// MACCHINA
 let player = {
   lane: 1,
   size: 60,
@@ -88,14 +88,33 @@ let obstacles = [];
 let speed = 4;
 let startTime = Date.now();
 
-// MOVIMENTO
-function moveLeft() {
-  if (player.lane > 0) player.lane--;
+// 🔒 BLOCCO ANTI DOPPIO TAP
+let canMove = true;
+function safeMove(direction) {
+  if (!canMove) return;
+  canMove = false;
+
+  player.lane += direction;
+
+  // clamp corsia (IMPOSSIBILE USCIRE)
+  if (player.lane < 0) player.lane = 0;
+  if (player.lane > lanes - 1) player.lane = lanes - 1;
+
+  setTimeout(() => canMove = true, 120);
 }
 
-function moveRight() {
-  if (player.lane < lanes - 1) player.lane++;
-}
+// CONTROLLI SICURI (pointerdown)
+document.getElementById("leftBtn")
+  .addEventListener("pointerdown", e => {
+    e.preventDefault();
+    safeMove(-1);
+  });
+
+document.getElementById("rightBtn")
+  .addEventListener("pointerdown", e => {
+    e.preventDefault();
+    safeMove(1);
+  });
 
 // OSTACOLI
 function addObstacle() {
@@ -111,7 +130,7 @@ function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   laneWidth = canvas.width / lanes;
-  player.y = canvas.height - 60; // 🔒 BLOCCATA IN BASSO
+  player.y = canvas.height - 60;
 
   // strada
   ctx.fillStyle = "#aaa";
@@ -127,25 +146,24 @@ function update() {
     ctx.stroke();
   }
 
-  // 🔢 PUNTEGGIO
+  // punteggio
   const score = Math.floor((Date.now() - startTime) / 1000);
   ctx.fillStyle = "black";
   ctx.font = "22px Arial";
   ctx.fillText("Punteggio: " + score, 10, 30);
 
-  // 🚗 MACCHINA ROSSA
+  // macchina
   const px = player.lane * laneWidth + laneWidth / 2 - player.size / 2;
   ctx.fillStyle = "red";
   ctx.fillRect(px, player.y, player.size, player.size);
 
-  // ⬛ OSTACOLI
+  // ostacoli
   ctx.fillStyle = "black";
   for (let o of obstacles) {
     o.y += speed;
     const ox = o.lane * laneWidth + laneWidth / 2 - o.size / 2;
     ctx.fillRect(ox, o.y, o.size, o.size);
 
-    // collisione
     if (
       o.lane === player.lane &&
       o.y + o.size > player.y &&
